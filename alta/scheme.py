@@ -22,21 +22,46 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""This module provides an abstract interface to the scheme as defined in
+Golle/Modadugu (2001).
+"""
+
 from abc import ABCMeta, abstractmethod
 
 class Scheme(metaclass=ABCMeta):
+    """A scheme for defining a DAG of payload hashes."""
     @abstractmethod
     def sources(self, seqno, start=None, end=None):
+        """An abstract method that must be defined to return the list of
+        indices of nodes from which hashes must be drawn for insertion into the
+        given node's authentication tag. If first or last is specified,
+        eliminate any node indices outside of that range.
+        """
         pass
 
     @abstractmethod
     def destinations(self, seqno, start=None, end=None):
+        """An abstract method that must be defined to return the list of
+        indices of nodes into which a given node's hash must be placed. If
+        first or last is specified, eliminate any node indices outside of that
+        range.
+        """
         pass
 
     @abstractmethod
     def is_ready(self, want_send_seqno, latest_seqno):
+        """An abstract method that must be defined to be true if all payload
+        hashes required to fully construct the payload with index
+        want_send_idex must be available. Note that this requires payloads to
+        be constructed in-order.
+        """
         pass
 
     @abstractmethod
     def in_write_window(self, query_seqno, latest_seqno):
+        """An abstract method that must be defined to be true if the hash of
+        the payload with the given query_index may still be required to
+        construct payloads from latest_index onward. Note that this requires
+        payloads to be constructed in-order.
+        """
         pass

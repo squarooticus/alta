@@ -22,9 +22,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""This module provides a hash truncated to a given number of octets."""
+
 from binascii import hexlify
 
-def TruncatedHash(hash_ctor, trunc_bytes):
+def TruncatedHash(hash_ctor, trunc_octets):
+    """Return a new hash type derived from the given hash_ctor type, truncated
+    to the given number of octets.
+    """
     def __init__(self, *args, **kwargs):
         self._hstate = hash_ctor(*args, **kwargs)
 
@@ -32,9 +37,11 @@ def TruncatedHash(hash_ctor, trunc_bytes):
         return getattr(self._hstate, name)
 
     def hexdigest(self):
+        """Return a hex encoding of the truncated digest."""
         return hexlify(self.digest())
 
     def digest(self):
-        return self._hstate.digest()[0:trunc_bytes]
+        """Return the truncated digest."""
+        return self._hstate.digest()[0:trunc_octets]
 
-    return type('Truncated%s' % hash_ctor.__name__.capitalize(), (), dict( __init__=__init__, __getattr__=__getattr__, digest=digest, hexdigest=hexdigest, hash_size=trunc_bytes ))
+    return type('Truncated%s' % hash_ctor.__name__.capitalize(), (), dict( __init__=__init__, __getattr__=__getattr__, digest=digest, hexdigest=hexdigest, hash_size=trunc_octets ))

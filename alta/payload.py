@@ -22,28 +22,44 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""Abstract interface to ALTA payloads."""
+
 from abc import ABCMeta, abstractmethod
 
 class Payload(metaclass=ABCMeta):
+    """Derive (or duck-type) to define a payload class."""
     @abstractmethod
     def hash(self):
+        """Abstract method that must be defined to return the hash of the
+        serialized payload.
+        """
         pass
 
     @property
     @abstractmethod
     def index(self):
+        """Abstract method that must be defined to return the index of the
+        payload.
+        """
         pass
 
     @property
     @abstractmethod
     def auth_tag(self):
+        """Abstract method that must be defined to return the authentication
+        tag for the payload.
+        """
         pass
 
     @property
     @abstractmethod
     def signature_valid(self):
+        """Abstract method that must be defined as true iff the signature in
+        the given payload (if any) is valid.
+        """
         pass
 
     @abstractmethod
     def to_str(self):
+        """Abstract method that must be defined to serialize the payload."""
         pass

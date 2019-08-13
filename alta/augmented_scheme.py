@@ -22,17 +22,26 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""This module provides an implementation of the augmented scheme construction
+according to Golle/Modadugu (2001):
+
+https://www.semanticscholar.org/paper/Authenticating-Streamed-Data-in-the-Presence-of-Golle-Modadugu/169dbc1bd006a1d4b92ffcf379b6d1028dbdb5b6
+"""
+
 from .scheme import Scheme
 
 # FIXME: This stuff needs to deal with rollover
 class AugmentedPeriod:
+    """The augmented period."""
     def __init__(self):
+        """Initialize to a two-node graph."""
         A = { 'edges': [], 'pred': None }
         self.B = { 'edges': [], 'pred': A }
         self.next_insert = self.B
         self.nodect = 2
 
     def augment(self):
+        """Augment the interval by inserting a pair of new nodes into the graph."""
         n1 = { 'edges': [ self.next_insert['pred'], self.next_insert ], 'pred': self.next_insert['pred'] }
         n2 = { 'edges': [ n1, self.next_insert ], 'pred': n1 }
         self.next_insert['pred'] = n2
@@ -40,6 +49,7 @@ class AugmentedPeriod:
         self.nodect += 2
 
     def _flatten(self):
+        """Flatten the graph into a list."""
         n = self.B
         idx = self.nodect - 1
         self.seq = []
@@ -50,26 +60,25 @@ class AugmentedPeriod:
             n = n['pred']
 
     def doffsets(self):
+        """Return the relative index offsets for the destination of each edge in the graph."""
         self._flatten()
         for n in self.seq[1:len(self.seq)-1]:
             yield sorted([ d['idx'] - n['idx'] for d in n['edges'] ])
         return
 
-    def dump(self):
-        self._flatten()
-        for n in self.seq:
-            print("%2d: %s" % (n['idx'], ' '.join([ '%d' % d['idx'] for d in n['edges'] ])))
-            print("    %s" % (' '.join([ '%d' % (d['idx'] - n['idx']) for d in n['edges'] ])))
-        print(list(self.doffsets()))
-
 class AugmentedScheme(Scheme):
+    """The augmented scheme for packet hash source/destination offsets."""
     def __init__(self, a, p=1):
+        """Compute the offsets according to the specified arguments a and p, as
+        specified in the source paper.
+        """
         self.a = a # strength
         self.p = p # period
         self._construct_doffsets()
         self._compute_soffsets()
 
     def _construct_doffsets(self):
+        """Compute destination offsets as specified in the paper."""
         # This doesn't get done often, so no sense making it hard to follow.
         # This follows the construction presented in the paper very closely.
         self.doffsets = []
@@ -88,24 +97,41 @@ class AugmentedScheme(Scheme):
             raise ValueError()
 
     def _compute_soffsets(self):
-        # Conceptually inverts doffsets, resulting in the list of nodes whose
-        # hashes a node needs to contain.
+        """Conceptually invert doffsets, resulting in the list of offsets to
+        nodes whose hashes a given node needs to contain.
+        """
         self.soffsets = [ [] for i in self.doffsets ]
         for idx,dofs in enumerate(self.doffsets):
             for o in dofs:
                 self.soffsets[(idx + o) % self.p].append(-o)
 
     def sources(self, index, first=None, last=None):
+        """Given a node index, return the list of indices of nodes from which
+        hashes must be drawn. If first or last is specified, eliminate any node
+        indices outside of that range.
+        """
         return sorted([ index + o for o in self.soffsets[index % self.p]
             if (first is None or index+o >= first) and (last is None or index+o <= last) ])
 
     def destinations(self, index, first=None, last=None):
+        """Given a node index, return the list of indices of nodes into which
+        its hash must be placed. If first or last is specified, eliminate any node
+        indices outside of that range.
+        """
         return [ index + o for o in self.doffsets[index % self.p]
                 if (first is None or index+o >= first) and (last is None or index+o <= last) ]
 
     def is_ready(self, want_send_index, latest_index):
+        """True if all payload hashes required to fully construct the payload
+        with index want_send_idex must be available. Note that this requires
+        payloads to be constructed in-order.
+        """
         return latest_index - want_send_index >= self.p-1
 
     def in_write_window(self, query_index, latest_index):
+        """True if the hash of the payload with the given query_index may still
+        be required to construct payloads from latest_index onward. Note that
+        this requires payloads to be constructed in-order.
+        """
         # FIXME: This should be true for only a+p-1 hashes at a time, not a*p
         return latest_index - query_index <= self.a * self.p

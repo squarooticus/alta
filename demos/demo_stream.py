@@ -26,7 +26,7 @@ import sys
 from alta.augmented_scheme import AugmentedScheme
 from alta.model_payload import ModelPayload
 from alta.producer import Producer
-from alta.consumer import Consumer
+from alta.consumer import ConsumerEO
 from alta.signature import Ed25519SigningKey
 from binascii import hexlify
 
@@ -40,7 +40,7 @@ a = 3
 p = 5
 s = AugmentedScheme(a,p)
 ps = Producer(scheme=s)
-cs = Consumer(pre_lv_window=128, post_lv_window=128)
+cs = ConsumerEO(pre_lv_window=128, post_lv_window=128)
 
 loss_pct = 5
 loss_burst_max = p
@@ -64,7 +64,7 @@ left_to_drop = 0
 
 from random import randint
 
-def _src_indexs(payload):
+def _src_indices(payload):
     index = payload.index
     return ','.join([ str(x) for x in s.sources(index, 0, last_index)])
 
@@ -76,7 +76,7 @@ for i,src_payload in enumerate(inp_seq):
         ps.shutdown()
 
     for send_payload in ps.payloads_ready():
-        print('s iter %d idx %d %s %s %d/%d %s %s' % (i, send_payload.index, hexlify(send_payload.hash()), send_payload.app_data[0:8], len(send_payload.app_data), len(send_payload.to_str()), ' VERIFIED' if send_payload.auth_tag.signature_key else '', _src_indexs(send_payload)))
+        print('s iter %d idx %d %s %s %d/%d %s %s' % (i, send_payload.index, hexlify(send_payload.hash()), send_payload.app_data[0:8], len(send_payload.app_data), len(send_payload.to_str()), ' VERIFIED' if send_payload.auth_tag.signature_key else '', _src_indices(send_payload)))
         drop = left_to_drop > 0 or randint(1,100) <= loss_pct
         if drop:
             if left_to_drop > 0:

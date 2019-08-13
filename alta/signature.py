@@ -22,14 +22,26 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""This module defines key types based on the nacl key interfaces, augmented
+with an explicit attribute indicating the fixed signature length.
+"""
+
 import nacl.signing
 
 def SignatureKeyTypes(skey_type, vkey_type, signature_len):
+    """Return a tuple (signing key type, verification key type) augmented with
+    the specified fixed signature_len. skey_type and vkey_type must conform to
+    the nacl.signing.{SigningKey,VerifyKey} interface.
+    """
     skey_wrapper_type = None
     vkey_wrapper_type = None
 
     def mk_init(key_type):
         def __init__(self, *args, **kwargs):
+            """If _import is specified as a keyword argument, its value is used
+            as the key; otherwise, a new key is constructed with the given
+            arguments.
+            """
             if '_import' in kwargs:
                 self._key = kwargs['_import']
             else:
@@ -41,9 +53,11 @@ def SignatureKeyTypes(skey_type, vkey_type, signature_len):
 
     @property
     def verify_key(self):
+        """Return the corresponding verify key for this signing key."""
         return vkey_wrapper_type(_import=self._key.verify_key)
 
     def generate(*args, **kwargs):
+        """Class method to generate and return a new signing key."""
         return skey_wrapper_type(_import=skey_type.generate(*args, **kwargs))
 
     skey_wrapper_type = type(skey_type.__name__, (), dict( __init__=mk_init(skey_type), __getattr__=__getattr__, generate=generate, verify_key=verify_key, signature_len=signature_len ))

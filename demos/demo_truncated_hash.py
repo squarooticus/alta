@@ -28,6 +28,6 @@ import sys
 from binascii import hexlify
 from hashlib import sha256
 
-TruncatedSHA256 = TruncatedHash(sha256, trunc_bytes=8)
+TruncatedSHA256 = TruncatedHash(sha256, trunc_octets=8)
 c2 = TruncatedSHA256(b'')
 print('c2: %s' % c2.hexdigest())
