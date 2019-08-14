@@ -22,10 +22,26 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""Asymmetric Loss-Tolerant Authentication (ALTA) Reference Implementation
+
+This package provides a scheme for efficient asymmetric (i.e., signature-based)
+authentication of packetized application data over a lossy transport such as
+UDP. Regularly-paced signatures are available to receivers as anchors for a
+mostly backward-looking directed acyclic graph (DAG) of payload hashes,
+constructed in such a way that a single signature can authenticate many
+payloads even when a subset of those payloads are not received.
+
+This software is based on work by Golle and Modadugu (2001). More information
+can be found in the internet draft at:
+
+https://datatracker.ietf.org/doc/draft-krose-mboned-alta/
+"""
+
 from .augmented_scheme import *
 from .auth_tag import *
 from .common import *
 from .consumer import *
+from .int_mod import *
 from .model_payload import *
 from .payload import *
 from .producer import *

@@ -25,9 +25,9 @@
 """This module provides an interface to construct, manipulate, serialize, and
 deserialize ALTA authentication tags. It provides a """
 
-from abc import ABCMeta, abstractmethod
-from struct import pack, unpack_from, calcsize
+from abc import abstractmethod, ABCMeta
 from functools import lru_cache
+import struct
 
 class OverwriteHashError(RuntimeError): pass
 
@@ -73,12 +73,12 @@ class AuthTagOptions:
 
     def to_str(self):
         """Serialize the options octet."""
-        return pack('>B', (self.hash_count << 5) | (int(self.signature_present) << 4))
+        return struct.pack('>B', (self.hash_count << 5) | (int(self.signature_present) << 4))
 
     @classmethod
     def from_str(cls, value):
         """Deserialize an options octet into a class instance."""
-        opt_int, = unpack_from('>B', value)
+        opt_int, = struct.unpack_from('>B', value)
         return cls(opt_int >> 5, (opt_int & 0x10) != 0), 1
 
 class AuthTag(metaclass=ABCMeta):
@@ -239,7 +239,7 @@ class AuthTagEO(AuthTag):
         """Initialize an instance with the given arguments.
 
         Keyword arguments:
-        explicit_index_fmt -- The struct.pack format for the index.
+        explicit_index_fmt -- The struct.struct.pack format for the index.
 
         See ancestor classes for further arguments.
         """
@@ -275,9 +275,9 @@ class AuthTagEO(AuthTag):
         """
         ret = self.options.to_str()
         if self._explicit_index_fmt:
-            ret += pack(self._explicit_index_fmt, self.index)
+            ret += struct.pack(self._explicit_index_fmt, self.index)
         for (src_index, src_hash) in self.chained_hashes:
-            ret += pack('>b%ds' % self.hash_size, src_index - self.index, src_hash)
+            ret += struct.pack('>b%ds' % self.hash_size, src_index - self.index, src_hash)
         if self.options.signature_present:
             ret += self._empty_signature()
         return ret
@@ -292,11 +292,11 @@ class AuthTagEO(AuthTag):
         auth_tag = cls(options=options, *args, **kwargs)
 
         if auth_tag.explicit_index_fmt:
-            auth_tag.index, = unpack_from(auth_tag.explicit_index_fmt, value, 1)
+            auth_tag.index, = struct.unpack_from(auth_tag.explicit_index_fmt, value, 1)
             used += auth_tag._explicit_index_size()
 
         fmt = '>' + ('b%ds' % (auth_tag.hash_size)) * auth_tag.options.hash_count
-        ofs_hash_pairs = list(unpack_from(fmt, value, used))
+        ofs_hash_pairs = list(struct.unpack_from(fmt, value, used))
         while ofs_hash_pairs:
             ofs = int(ofs_hash_pairs.pop(0))
             src_hash = ofs_hash_pairs.pop(0)
@@ -304,7 +304,7 @@ class AuthTagEO(AuthTag):
         used += (1 + auth_tag.hash_size) * auth_tag.options.hash_count
 
         if auth_tag.options.signature_present:
-            auth_tag.signature, = unpack_from('>%ds' % auth_tag.signature_key.signature_len, value, used)
+            auth_tag.signature, = struct.unpack_from('>%ds' % auth_tag.signature_key.signature_len, value, used)
             used += auth_tag.signature_key.signature_len
 
         return auth_tag, used
@@ -316,7 +316,7 @@ class AuthTagEO(AuthTag):
     def _explicit_index_size(self):
         """Return the size of the explicit index."""
         if self._explicit_index_fmt:
-            return calcsize(self._explicit_index_fmt)
+            return struct.calcsize(self._explicit_index_fmt)
         else:
             return 0
 

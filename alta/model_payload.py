@@ -37,10 +37,10 @@ from .auth_tag import AuthTagEO
 from .payload import Payload
 from .truncated_hash import TruncatedHash
 
-from hashlib import sha256
+import hashlib
 from functools import lru_cache
 
-TruncatedSHA256 = TruncatedHash(sha256, trunc_octets=8)
+TruncatedSHA256 = TruncatedHash(hashlib.sha256, trunc_octets=8)
 
 class ModelAuthTag(AuthTagEO):
     """The model authentication tag, employing single-octet explicit offsets,

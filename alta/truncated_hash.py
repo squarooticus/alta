@@ -24,7 +24,7 @@
 
 """This module provides a hash truncated to a given number of octets."""
 
-from binascii import hexlify
+import binascii
 
 def TruncatedHash(hash_ctor, trunc_octets):
     """Return a new hash type derived from the given hash_ctor type, truncated
@@ -38,7 +38,7 @@ def TruncatedHash(hash_ctor, trunc_octets):
 
     def hexdigest(self):
         """Return a hex encoding of the truncated digest."""
-        return hexlify(self.digest())
+        return binascii.hexlify(self.digest())
 
     def digest(self):
         """Return the truncated digest."""
